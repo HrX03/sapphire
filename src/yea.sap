@@ -1,0 +1,65 @@
+import './core/collection.sap'
+import './core/sdk.sap'
+import './offset.sap': offset
+
+/*def test: num = 0.0
+print(typeof(test))
+print(compatible(test, 0.0))
+
+def i: num = 0
+
+while(less_than(i, 10)) {
+    print(i)
+    i = sum(i, 1)
+}*/
+
+/*def print_sequence(initial: num): none = {
+    print(initial)
+    if(greater_than(initial, 0)) {
+        return print_sequence(sub(initial, 1))
+    }
+}
+
+print_sequence(10)*/
+
+/* def recur_fibo(n: num): num = {
+   if (less_eq(n, 1)) {
+       return n
+   } else {
+       return sum(recur_fibo(sub(n, 1)), recur_fibo(sub(n, 2)))
+   }
+}
+
+def nterms: int = 10
+
+print('Fibonacci sequence:')
+
+def i: num = 0
+while(less(i, nterms)) {
+    print(recur_fibo(i))
+    i = sum(i, 1)
+} */
+
+def topleft: scope = offset.Offset(16, 24)
+print(offset.get_x(topleft))
+print(offset.get_y(topleft))
+print(offset.get_distance_squared(topleft))
+print(offset.get_distance(topleft))
+
+topleft = offset.translate(topleft, 8, 8)
+print(offset.get_x(topleft))
+print(offset.get_y(topleft))
+print(offset.get_distance_squared(topleft))
+print(offset.get_distance(topleft))
+
+def collection: list<num> = [0, 1, 2, 3]
+def collection2: tuple<string, num, bool> = ('first element', 1, true)
+def collection3: dict<string, any> = <[
+    'first': 0,
+    'second': 'JUMPSCARE',
+    'third': 2,
+]>
+
+print(get(collection3, 'third'))
+
+print(sum_list([5, 4, 2, 4]))

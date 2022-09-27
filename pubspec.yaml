@@ -1,0 +1,20 @@
+name: sapphire
+description: A sample command-line application.
+version: 1.0.0
+# homepage: https://www.example.com
+
+environment:
+  sdk: '>=2.19.0-146.0.dev <3.0.0'
+
+# dependencies:
+#   path: ^1.8.0
+
+dev_dependencies:
+  lint: ^1.10.0
+  lints: ^2.0.0
+  test: ^1.16.0
+dependencies:
+  antlr4: ^4.11.1
+  collection: ^1.16.0
+  path: ^1.8.2
+  petitparser: ^5.0.0

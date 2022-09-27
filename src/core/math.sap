@@ -1,0 +1,27 @@
+/* ====== Constants ====== */
+export def E: num = 2.718281828459045
+export def LN10: num = 2.302585092994046
+export def LN2: num = 0.6931471805599453
+export def LOG2_E: num = 1.4426950408889634
+export def LOG10_E: num = 0.4342944819032518
+export def PI: num = 3.1415926535897932
+export def SQRT_1_2: num = 0.7071067811865476
+export def SQRT_2: num = 1.4142135623730951
+
+/* ====== Methods ======*/
+export def min(a: num, b: num): num = native('math:min', [a, b])
+export def max(a: num, b: num): num = native('math:max', [a, b])
+export def atan2(a: num, b: num): num = native('math:atan2', [a, b])
+export def pow(x: num, exponent: num): num = native('math:pow', [a, b])
+
+export def sin(radians: num): num = native('math:sin', [radians])
+export def cos(radians: num): num = native('math:cos', [radians])
+export def tan(radians: num): num = native('math:tan', [radians])
+
+export def asin(x: num): num = native('math:asin', [x])
+export def acos(x: num): num = native('math:acos', [x])
+export def atan(x: num): num = native('math:atan', [x])
+
+export def sqrt(x: num): num = native('math:sqrt', [x])
+export def exp(x: num): num = native('math:exp', [x])
+export def log(x: num): num = native('math:log', [x])

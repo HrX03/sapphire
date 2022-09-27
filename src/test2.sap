@@ -1,0 +1,1 @@
+export def exported_value: string = 'edrfgfg'

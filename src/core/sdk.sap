@@ -1,0 +1,102 @@
+import './collection.sap'
+
+/* ====== Arithmetic and concat operators ====== */
+export def sum(a: num, b: num): num =
+    native('sdk:arithmetic_op', ['sum', a, b])
+
+export def sub(a: num, b: num): num =
+    native('sdk:arithmetic_op', ['sub', a, b])
+
+export def mul(a: num, b: num): num =
+    native('sdk:arithmetic_op', ['mul', a, b])
+
+export def div(a: num, b: num): num =
+    native('sdk:arithmetic_op', ['div', a, b])
+
+export def mod(a: num, b: num): num =
+    native('sdk:arithmetic_op', ['mod', a, b])
+
+export def intdiv(a: num, b: num): num =
+    native('sdk:arithmetic_op', ['intdiv', a, b])
+
+export def sum_list(values: list<num>): num = arithmetic_op_list(values, sum)
+export def sub_list(values: list<num>): num = arithmetic_op_list(values, sub)
+export def mul_list(values: list<num>): num = arithmetic_op_list(values, mul)
+export def div_list(values: list<num>): num = arithmetic_op_list(values, div)
+
+def arithmetic_op_list(values: list<num>, op: fun:num<num, num>): num = {
+    def result: num = get(values, 0)
+    def i: num = 1
+
+    while(less(i, lengthof(values))) {
+        result = op(result, get(values, i))
+        i = sum(i, 1)
+    }
+
+    return result
+}
+
+export def concat(a: string, b: string): string = native('sdk:concat', [[a, b]])
+export def concat_list(values: list<string>): string = native('sdk:concat', [values])
+
+/* ====== Misc utitlies ====== */
+export def print(value: any): none = native('sdk:print', [value])
+export def reflect(ref: scope, name: string): any = native('sdk:reflect', [ref, name])
+export def typeof(value: any): type = native('sdk:type_of', [value])
+export def type_match(value: any, match: type): bool = native('sdk:type_match', [value, match])
+export def compatible(value: any, other: any): bool = type_match(value, typeof(other))
+export def call(ref: fun, arguments: list): any = native('sdk:call', [ref, arguments])
+export def call_named(ref: scope, name: string, arguments: list): any = {
+    def method: fun = reflect(ref, name)
+
+    if(equals(method, none)) {
+        return none
+    }
+
+    return call(method, arguments)
+}
+
+export def ternary(condition: bool, success: any, failure: any): any = {
+    if(condition) {
+        return success
+    } else {
+        return failure
+    }
+}
+
+/* ====== Checks ====== */
+export def equals(first: any, second: any): bool =
+    native('sdk:equals', [first, second])
+
+export def is_int(value: num): bool = native('sdk:is_int', [value])
+export def is_double(value: num): bool = not(is_int(value))
+
+export def and(first: bool, second: any): bool =
+    native('sdk:boolean_check', ['and', [first, second]])
+
+export def and_list(values: list<bool>): bool =
+    native('sdk:boolean_check', ['and', values])
+
+export def or(first: bool, second: any): bool =
+    native('sdk:boolean_check', ['or', [first, second]])
+
+export def or_list(values: list<bool>): bool =
+    native('sdk:boolean_check', ['or', values])
+
+export def xor(first: bool, second: any): bool =
+    native('sdk:boolean_check', ['xor', [first, second]])
+
+export def not(value: bool) = native('sdk:not', [value])
+
+/* ====== Relational tests for numbers ====== */
+export def less(first: num, second: num): bool =
+    native('sdk:relational_test', ['lss', first, second])
+
+export def greater(first: num, second: num): bool =
+    native('sdk:relational_test', ['grt', first, second])
+
+export def less_eq(first: num, second: num): bool =
+    native('sdk:relational_test', ['lsseq', first, second])
+
+export def greater_eq(first: num, second: num): bool =
+    native('sdk:relational_test', ['grteq', first, second])

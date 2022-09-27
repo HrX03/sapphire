@@ -1,0 +1,71 @@
+import './core/math.sap': math
+import './core/sdk.sap'
+
+export def Offset(x: num, y: num): scope = {
+    def distance_squared: num = sum(mul(x, x), mul(y, y))
+    def distance: num = math.sqrt(sum(mul(x, x), mul(y, y)))
+
+    def translate(dx: num, dy: num): scope = {
+        return Offset(sum(x, dx), sum(y, dy))
+    }
+
+    return this
+}
+
+def scope_is_offset(obj: scope): bool = {
+    def x: num = reflect(obj, 'x')
+    def y: num = reflect(obj, 'y')
+    def distance_squared: num = reflect(obj, 'distance_squared')
+    def distance: num = reflect(obj, 'distance')
+    def translate: fun = reflect(obj, 'translate')
+
+    def anything_none: bool = or_list([
+        equals(x, none),
+        equals(y, none),
+        equals(distance_squared, none),
+        equals(distance, none),
+        equals(translate, none),
+    ])
+
+    return not(anything_none)
+}
+
+export def translate(offset: scope, x: num, y: num): scope = {
+    if(not(scope_is_offset(offset))) {
+        return none
+    }
+
+    return call_named(offset, 'translate', [x, y])
+}
+
+export def get_x(offset: scope): num = {
+    if(not(scope_is_offset(offset))) {
+        return none
+    }
+
+    return reflect(offset, 'x')
+}
+
+export def get_y(offset: scope): num = {
+    if(not(scope_is_offset(offset))) {
+        return none
+    }
+
+    return reflect(offset, 'y')
+}
+
+export def get_distance_squared(offset: scope): num = {
+    if(not(scope_is_offset(offset))) {
+        return none
+    }
+
+    return reflect(offset, 'distance_squared')
+}
+
+export def get_distance(offset: scope): num = {
+    if(not(scope_is_offset(offset))) {
+        return none
+    }
+
+    return reflect(offset, 'distance')
+}

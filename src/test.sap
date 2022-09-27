@@ -1,0 +1,84 @@
+import './sdk.sap'
+
+def a: double = 3.2
+def b: list<string> = ['yea', 'six']
+def c: tuple<string, int, type, list<tuple<int, double>>, scope, dict> =
+(
+    'a',
+    0,
+    string,
+    [
+        (0, 0)
+    ],
+    this,
+    <[
+        'string': 0,
+        'six': 0.2
+    ]>
+)
+def d: type = tuple<string, int, type, list<tuple<int, double>>, scope, dict>
+
+print(concat('hello ', 'world'))
+
+def number: num = 8
+def scope_sum(): num = {
+    return sum(number, 6)
+}
+print(scope_sum())
+number = 10
+print(scope_sum())
+
+def test(a: int): scope = {
+    def test_call(): bool = {
+        return false
+    }
+
+    return this
+}
+
+//def a: fun = scope_sum
+
+def test_inst: scope = test(3)
+def a_from_test: int = reflect(test_inst, 'a')
+def test_call: fun:int = reflect(test_inst, 'test_call')
+print(test_inst)
+print(a_from_test)
+print(test_call)
+
+def print_alt: fun = print
+print_alt('test')
+print(fun:double<int>)
+
+def cond: int = 0
+print(cond)
+
+def cond_status: string = ternary(
+    equals(cond, 0),
+    'first match 0',
+    ternary(
+        equals(cond, 1),
+        'second match 1',
+        'no match'
+    )
+)
+
+if (equals(cond, 0)) {
+    print('first match 0')
+} elif (equals(cond, 1)) {
+    print('second match 1')
+} else {
+    print('no match')
+}
+
+print(concat('(from ternary): ', cond_status))
+
+def simple_switch(value: bool): string = {
+    if(value) {
+        return 'yea!'
+    }
+    
+    return 'nope'
+}
+
+print(simple_switch(true))
+print(simple_switch(false))

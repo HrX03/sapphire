@@ -1,0 +1,2 @@
+export def get(collection: any, key: any): any = native('collection:get', [collection, key])
+export def lengthof(collection: any): num = native('collection:lengthof', [collection])
