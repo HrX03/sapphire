@@ -15,7 +15,7 @@ importHeader:
 statement:
 	scope
 	| conditionalStatement
-    | whileStatement
+	| whileStatement
 	| defineStatement
 	| returnStatement
 	| undefineStatement
@@ -23,20 +23,25 @@ statement:
 	| assignStatement;
 
 defineStatement:
-	ExportKeyword? DefineKeyword NL* simpleIdentifier NL* functionArguments? (
-		NL* COLON NL* type
+	ExportKeyword? DefineKeyword NL* simpleIdentifier NL* functionDefinition? (
+		NL* typeDefinition
 	)? (NL* assignment)?;
 assignStatement: simpleIdentifier NL* assignment;
 returnStatement: ReturnKeyword NL* expression?;
 undefineStatement: UndefineKeyword NL* simpleIdentifier;
-conditionalStatement: ifBlock elifBlock* elseBlock?;
-whileStatement: WhileKeyword condition scope;
+conditionalStatement: ifBlock NL* elifBlock* NL* elseBlock?;
+whileStatement: WhileKeyword condition NL* scope;
 
-ifBlock: IfKeyword condition scope;
-elifBlock: ElifKeyword condition scope;
-elseBlock: ElseKeyword scope;
+functionDefinition: typeArguments? NL* functionArguments;
+typeDefinition: COLON NL* type;
+typeArguments: LSSTHAN typeArgument (COMMA typeArgument)* COMMA? GRTTHAN;
+typeArgument: typeIdentifier NL* typeDefinition?;
 
-condition: LPAREN expression RPAREN;
+ifBlock: IfKeyword NL* condition NL* scope;
+elifBlock: ElifKeyword NL* condition NL* scope;
+elseBlock: ElseKeyword NL* scope;
+
+condition: LPAREN NL* expression NL* RPAREN;
 assignment: EQUALS NL* expression;
 
 expression:
@@ -65,12 +70,13 @@ functionArguments: LPAREN argumentList? RPAREN;
 argumentList: argument (COMMA argument)* COMMA?;
 argument: simpleIdentifier (COLON type)?;
 
-functionCall: LPAREN exprList? RPAREN;
+functionCall: typeList? LPAREN exprList? RPAREN;
 dict: LSSTHAN LSQUARE exprDict? RSQUARE GRTTHAN;
-tuple: LPAREN exprList? RPAREN;
+tuple: LPAREN exprList RPAREN;
 list: LSQUARE exprList? RSQUARE;
 identifier: (Identifier DOT)? Identifier functionCall?;
 simpleIdentifier: Identifier;
+typeIdentifier: TypeIdentifier;
 string: OpenQuote stringContents* CloseQuote;
 stringContents: Text | Escaped | UniEscaped;
 
@@ -82,7 +88,8 @@ type:
 	| NumberKeyword
 	| BooleanKeyword
 	| ScopeKeyword
-	| TypeKeyword;
+	| TypeKeyword
+	| typeIdentifier;
 
 complexType: complexTypeName typeList?;
 complexTypeName: (

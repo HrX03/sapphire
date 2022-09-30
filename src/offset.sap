@@ -35,7 +35,7 @@ export def translate(offset: scope, x: num, y: num): scope = {
         return none
     }
 
-    return call_named(offset, 'translate', [x, y])
+    return call_named(offset, 'translate', [x, y], [])
 }
 
 export def get_x(offset: scope): num = {

@@ -20,7 +20,7 @@ class NativeMethodProvider extends FunctionDefinition {
   }) : super(
           const SingleStatement.empty(),
           explicitType: const Type(TypeKind.any),
-          arguments: const {
+          parameters: const {
             'name': Type(TypeKind.string),
             'values': ComplexType(TypeKind.list),
           },

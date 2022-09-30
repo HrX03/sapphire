@@ -40,7 +40,7 @@ while(less(i, nterms)) {
     i = sum(i, 1)
 } */
 
-def topleft: scope = offset.Offset(16, 24)
+/*def topleft: scope = offset.Offset(16, 24)
 print(offset.get_x(topleft))
 print(offset.get_y(topleft))
 print(offset.get_distance_squared(topleft))
@@ -58,8 +58,16 @@ def collection3: dict<string, any> = <[
     'first': 0,
     'second': 'JUMPSCARE',
     'third': 2,
-]>
+]>*/
 
-print(get(collection3, 'third'))
+//def a: list<string> = ['test', 'mogu']
+//def test: list = a
+//print(typeof(test))
+
+//print(get(collection3, 'third'))
 
 print(sum_list([5, 4, 2, 4]))
+
+/*def test_fun<#T: list, #R>(): #T = {
+    return 'sex'
+}*/

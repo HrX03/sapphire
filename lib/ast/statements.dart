@@ -28,26 +28,21 @@ abstract class StatementNode extends Node {
 class DefineStatementNode extends StatementNode {
   final String identifier;
   final TypeNode type;
-  final List<ArgumentNode>? arguments;
+  final List<ArgumentNode>? parameters;
+  final List<TypeArgumentNode>? typeParameters;
   final ExpressionNode assignedValue;
   final bool exported;
 
   const DefineStatementNode({
     required this.identifier,
     required this.type,
-    this.arguments,
+    this.parameters,
+    this.typeParameters,
     required this.assignedValue,
     this.exported = false,
     required super.context,
-  });
-
-  @override
-  String toString() {
-    final List<String> argumentsStr =
-        arguments?.map((e) => "(${e.id}, ${e.type})").toList() ?? [];
-
-    return 'define(this, $identifier, [${argumentsStr.join(", ")}], $type, $assignedValue)';
-  }
+    // ignore: avoid_bool_literals_in_conditional_expressions
+  }) : assert(typeParameters != null ? parameters != null : true);
 
   @override
   T? accept<T>(Visitor<T> visitor) => visitor.visitDefineStatement(this);
@@ -65,6 +60,20 @@ class ArgumentNode extends Node {
 
   @override
   T? accept<T>(Visitor<T> visitor) => visitor.visitArgument(this);
+}
+
+class TypeArgumentNode extends Node {
+  final String id;
+  final TypeNode? baseType;
+
+  const TypeArgumentNode({
+    required this.id,
+    required this.baseType,
+    required super.context,
+  });
+
+  @override
+  T? accept<T>(Visitor<T> visitor) => visitor.visitTypeArgument(this);
 }
 
 class ReturnStatementNode extends StatementNode {

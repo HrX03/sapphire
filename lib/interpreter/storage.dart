@@ -15,7 +15,7 @@ abstract class Storage<T extends Value> {
   Type get storedType => explicitType ?? data.type;
 }
 
-class VariableDefinition extends Storage {
+class VariableDefinition extends Storage<Value> {
   const VariableDefinition(
     super.data, {
     super.explicitType,
@@ -27,13 +27,15 @@ class VariableDefinition extends Storage {
 }
 
 class FunctionDefinition extends Storage<Statements> {
-  final Map<String, Type> arguments;
+  final Map<String, Type> parameters;
+  final Map<String, Type> typeParameters;
   final Scope? parentScope;
 
   const FunctionDefinition(
     super.data, {
     super.explicitType,
-    this.arguments = const {},
+    this.parameters = const {},
+    this.typeParameters = const {},
     super.exported = false,
     this.parentScope,
   });
@@ -43,12 +45,12 @@ class FunctionDefinition extends Storage<Statements> {
   @override
   FunctionType get storedType => FunctionType(
         explicitType ?? const Type(TypeKind.any),
-        arguments.values.toList(),
+        parameters.values.toList(),
       );
 
   @override
   String toString() {
-    return 'fun(${arguments.entries.map((e) => "${e.key}: ${e.value}").join(", ")}): ${storedType.returnType}';
+    return 'fun(${parameters.entries.map((e) => "${e.key}: ${e.value}").join(", ")}): ${storedType.returnType}';
   }
 }
 

@@ -38,7 +38,7 @@ Value _getNative(SapphireInterpreter interpreter, List<Value> arguments) {
     case TypeKind.dict:
       final Dict dict = collection as Dict;
 
-      if (!typeCheck(dict.types.first, key.type)) {
+      if (!strongTypeCheck(dict.types.first, key)) {
         throw Exception(
           "Can't use key of type ${key.type} to access dict with key type ${dict.types.first}",
         );
@@ -90,7 +90,7 @@ Value _accessList(List<Value> list, int index) {
 }
 
 void _validateListTupleIndex(Value value) {
-  if (!typeCheck(const Type(TypeKind.number), value.type)) {
+  if (!strongTypeCheck(const Type(TypeKind.number), value)) {
     throw Exception(
       "When accessing lists only number keys are allowed to access elements",
     );

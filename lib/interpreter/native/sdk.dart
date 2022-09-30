@@ -22,7 +22,8 @@ const NativeMethodRegistry sdkRegistry = {
   ),
   'concat': NativeMethod<Str>(
     argumentSignature: [
-      ComplexType(TypeKind.list, [Type(TypeKind.string)]),
+      Type(TypeKind.string),
+      Type(TypeKind.string),
     ],
     callback: _concatNative,
   ),
@@ -57,7 +58,8 @@ const NativeMethodRegistry sdkRegistry = {
   'boolean_check': NativeMethod<Boolean>(
     argumentSignature: [
       Type(TypeKind.string),
-      ComplexType(TypeKind.list, [Type(TypeKind.boolean)]),
+      Type(TypeKind.boolean),
+      Type(TypeKind.boolean),
     ],
     callback: _booleanCheckNative,
   ),
@@ -84,6 +86,7 @@ const NativeMethodRegistry sdkRegistry = {
     argumentSignature: [
       Type(TypeKind.function),
       ComplexType(TypeKind.list, [Type(TypeKind.any)]),
+      ComplexType(TypeKind.list, [Type(TypeKind.type)]),
     ],
     callback: _callNative,
   ),
@@ -133,16 +136,10 @@ Number _arithmeticOpNative(
 }
 
 Str _concatNative(SapphireInterpreter interpreter, List<Value> arguments) {
-  final ListVal values = arguments.first as ListVal;
-  final List<Str> strings = values.data.cast<Str>();
+  final Str firstValue = arguments.first as Str;
+  final Str secondValue = arguments.last as Str;
 
-  final StringBuffer result = StringBuffer();
-
-  for (final Str val in strings) {
-    result.write(val.data);
-  }
-
-  return Str(result.toString());
+  return Str(firstValue.data + secondValue.data);
 }
 
 Value _reflectNative(SapphireInterpreter interpreter, List<Value> arguments) {
@@ -155,7 +152,7 @@ Value _reflectNative(SapphireInterpreter interpreter, List<Value> arguments) {
   if (storage is FunctionDefinition) {
     return FunctionRef(
       storage.data,
-      arguments: storage.arguments,
+      parameters: storage.parameters,
       returnType: storage.storedType.returnType,
       parentScope: scope,
     );
@@ -168,7 +165,7 @@ Boolean _equalsNative(SapphireInterpreter interpreter, List<Value> arguments) {
   final Value firstVal = arguments.first;
   final Value secondVal = arguments.last;
 
-  if (!typeCheck(firstVal.type, secondVal.type)) return const Boolean(false);
+  if (!strongTypeCheck(firstVal.type, secondVal)) return const Boolean(false);
 
   return Boolean(firstVal.data == secondVal.data);
 }
@@ -206,27 +203,19 @@ Boolean _booleanCheckNative(
   List<Value> arguments,
 ) {
   final Str checkType = arguments[0] as Str;
-  // final Boolean firstVal = arguments[1] as Boolean;
-  // final Boolean secondVal = arguments[2] as Boolean;
-  final ListVal values = arguments[1] as ListVal;
-  final List<Boolean> booleans = values.data.cast<Boolean>();
+  final Boolean firstVal = arguments[1] as Boolean;
+  final Boolean secondVal = arguments[2] as Boolean;
 
-  bool result = booleans.removeAt(0).data;
+  final bool result;
   switch (checkType.data) {
     case 'and':
-      for (final Boolean val in booleans) {
-        result = result && val.data;
-      }
+      result = firstVal.data && secondVal.data;
       break;
     case 'or':
-      for (final Boolean val in booleans) {
-        result = result || val.data;
-      }
+      result = firstVal.data || secondVal.data;
       break;
     case 'xor':
-      for (final Boolean val in booleans) {
-        result = result ^ val.data;
-      }
+      result = firstVal.data ^ secondVal.data;
       break;
     default:
       throw Exception("Invalid check type ${checkType.data}");
@@ -254,21 +243,25 @@ Boolean _typeMatchNative(
   final Value firstValue = arguments.first;
   final Type secondValue = arguments.last as Type;
 
-  return Boolean(typeCheck(secondValue, firstValue.type));
+  return Boolean(strongTypeCheck(secondValue, firstValue));
 }
 
 Value _callNative(SapphireInterpreter interpreter, List<Value> arguments) {
-  final FunctionRef function = arguments.first as FunctionRef;
-  final ListVal listVal = arguments.last as ListVal;
-  final List<Value> providedArguments = listVal.data;
+  final FunctionRef function = arguments[0] as FunctionRef;
+  final ListVal argumentsVal = arguments[1] as ListVal;
+  final List<Value> providedArguments = argumentsVal.data;
+  final ListVal typeArgumentsVal = arguments[2] as ListVal;
+  final List<Type> providedTypeArguments = typeArgumentsVal.data.cast<Type>();
 
   return interpreter.callFunction(
     FunctionDefinition(
       function.data,
-      arguments: function.arguments,
+      parameters: function.parameters,
+      typeParameters: function.typeParameters,
       explicitType: function.returnType,
       parentScope: function.parentScope,
     ),
     providedArguments,
+    providedTypeArguments,
   );
 }

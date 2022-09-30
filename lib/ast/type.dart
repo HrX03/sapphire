@@ -42,6 +42,15 @@ class TypeNode extends Node implements ExpressionNode {
   T? accept<T>(Visitor<T> visitor) => visitor.visitType(this);
 }
 
+class TypeIdentifierNode extends TypeNode {
+  final String identifier;
+
+  const TypeIdentifierNode({
+    required this.identifier,
+    required super.context,
+  }) : super._(kind: TypeKind.any);
+}
+
 class ComplexTypeNode extends TypeNode {
   final TypeListNode? types;
 

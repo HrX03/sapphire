@@ -1,0 +1,25 @@
+import './core/sdk.sap'
+
+def test<#T>(arg: num): num = {
+    def test2(arg2: #T): #T = arg2
+
+    def a: #T = test2('yea')
+}
+
+def test2<#T: list>(arg: #T): any = {
+    return arg
+}
+
+test2<list<string>>([])
+
+print(concat_list(['hello', ' ', 'world!']))
+print(sum_list([5, 6, 4]))
+
+print(and_list([true, true, true]))
+
+def a<#K, #V: #R, #R: #K>(keys: list<#K>, values: list<#V>, function: fun:dict<#K, #V><#K, #V>): #R
+def b(c: any, d: list<string>): dict<any, list<string>>
+
+def complex<#K: #V, #V>(p0: #V): #K = p0
+
+def yea: list<string> = complex<list<string>, list>([])

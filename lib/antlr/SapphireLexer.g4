@@ -23,6 +23,7 @@ EQUALS: '=';
 MINUS: '-';
 UNDERSCORE: '_';
 QUOTE: '\'';
+HASH: '#';
 LSSTHAN: '<' -> pushMode(Inside);
 GRTTHAN: '>';
 LPAREN: '(' -> pushMode(Inside);
@@ -67,6 +68,7 @@ MultiLineComment: '/*' ( MultiLineComment | . )*? '*/' -> channel(HIDDEN);
 WS: [ \t\f]+ -> channel(HIDDEN);
 NL: ('\r'? '\n' | '\r' | '\f');
 
+TypeIdentifier: HASH [A-Z][A-Z_]*;
 Identifier: [a-zA-Z][a-zA-Z0-9_]*;
 
 mode StringCtx;
@@ -131,6 +133,7 @@ Inside_TypeKeyword: TypeKeyword -> type(TypeKeyword);
 Inside_WS: WS -> type(WS), channel(HIDDEN);
 Inside_NL: NL -> type(NL), channel(HIDDEN);
 
+Inside_TypeIdentifier: TypeIdentifier -> type(TypeIdentifier);
 Inside_Identifier: Identifier -> type(Identifier);
 
 mode DEFAULT_MODE;

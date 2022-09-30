@@ -1,5 +1,6 @@
 import 'package:sapphire/ast/base.dart';
 import 'package:sapphire/ast/statements.dart';
+import 'package:sapphire/ast/type.dart';
 import 'package:sapphire/ast/visitor.dart';
 
 abstract class ExpressionNode extends Node {
@@ -13,11 +14,13 @@ class IdentifierNode extends ExpressionNode implements StatementNode {
   final String? libraryId;
   final String identifier;
   final List<ExpressionNode>? arguments;
+  final List<TypeNode>? typeArguments;
 
   const IdentifierNode({
     required this.identifier,
     this.libraryId,
     this.arguments,
+    this.typeArguments,
     required super.context,
   });
 

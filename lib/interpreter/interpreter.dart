@@ -124,12 +124,30 @@ class SapphireInterpreter extends SimpleVisitor {
 
   @override
   void visitDefineStatement(DefineStatementNode node) {
-    if (node.arguments != null) {
-      final ExpressionNode value = node.assignedValue;
-      final Type type = visitType(node.type);
+    if (node.parameters != null) {
+      final Map<String, Type>? typeParameters = node.typeParameters != null
+          ? Map.fromEntries(
+              node.typeParameters!.map(
+                (e) => MapEntry(
+                  e.id,
+                  e.baseType != null
+                      ? visitType(e.baseType!, returnReferenceWithGeneric: true)
+                      : const Type(TypeKind.any),
+                ),
+              ),
+            )
+          : null;
 
-      final Map<String, Type> arguments = Map.fromEntries(
-        node.arguments!.map((e) => MapEntry(e.id, visitType(e.type))),
+      final ExpressionNode value = node.assignedValue;
+      final Type type = visitType(node.type, returnReferenceWithGeneric: true);
+
+      final Map<String, Type> parameters = Map.fromEntries(
+        node.parameters!.map(
+          (e) => MapEntry(
+            e.id,
+            visitType(e.type, returnReferenceWithGeneric: true),
+          ),
+        ),
       );
 
       _scope.set(
@@ -144,7 +162,8 @@ class SapphireInterpreter extends SimpleVisitor {
                   ),
                 ),
           explicitType: type,
-          arguments: arguments,
+          parameters: parameters,
+          typeParameters: typeParameters ?? {},
           exported: node.exported,
           parentScope: _scope,
         ),
@@ -154,10 +173,10 @@ class SapphireInterpreter extends SimpleVisitor {
       final Type type = visitType(node.type);
 
       if (value is Statements) {
-        value = _evaluateStatements(value) ?? const None();
+        value = _evaluateStatements(value, returnType: type) ?? const None();
       }
 
-      if (!typeCheck(type, value.type)) {
+      if (!strongTypeCheck(type, value)) {
         throw Exception(
           "Can't assign a value of type ${value.type} to a variable of type $type",
         );
@@ -181,7 +200,7 @@ class SapphireInterpreter extends SimpleVisitor {
       );
     }
 
-    if (!typeCheck(current.storedType, value.type)) {
+    if (!strongTypeCheck(current.storedType, value)) {
       throw Exception(
         "Can't assign a value of type ${value.type} to a variable of type ${current.storedType}",
       );
@@ -244,7 +263,7 @@ class SapphireInterpreter extends SimpleVisitor {
     while (true) {
       final Value expression = visitExpression(node.condition);
 
-      if (!typeCheck(const Type(TypeKind.boolean), expression.type)) {
+      if (!strongTypeCheck(const Type(TypeKind.boolean), expression)) {
         throw Exception("While conditions must be of type bool");
       }
 
@@ -339,7 +358,8 @@ class SapphireInterpreter extends SimpleVisitor {
       if (node.arguments == null) {
         return FunctionRef(
           storage.data,
-          arguments: storage.arguments,
+          parameters: storage.parameters,
+          typeParameters: storage.typeParameters,
           returnType: storage.storedType.returnType,
           parentScope: _scope,
         );
@@ -348,6 +368,7 @@ class SapphireInterpreter extends SimpleVisitor {
       return callFunction(
         storage,
         node.arguments!.map((e) => visitExpression(e)).toList(),
+        node.typeArguments?.map((e) => visitType(e)).toList() ?? [],
       );
     }
 
@@ -359,11 +380,13 @@ class SapphireInterpreter extends SimpleVisitor {
       return callFunction(
         FunctionDefinition(
           data.data,
-          arguments: data.arguments,
+          parameters: data.parameters,
+          typeParameters: data.typeParameters,
           explicitType: data.returnType,
           parentScope: data.parentScope,
         ),
         node.arguments!.map((e) => visitExpression(e)).toList(),
+        node.typeArguments?.map((e) => visitType(e)).toList() ?? [],
       );
     }
 
@@ -374,29 +397,97 @@ class SapphireInterpreter extends SimpleVisitor {
     return data;
   }
 
-  Value callFunction(FunctionDefinition storage, List<Value> arguments) {
+  Type _fixTypeFromTypeTable(
+    Type type,
+    Map<String, Type> typeTable,
+  ) {
+    if (type is ComplexType) {
+      if (type is FunctionType) {
+        return FunctionType(
+          _fixTypeFromTypeTable(type.returnType, typeTable),
+          type.extraTypes
+              ?.map((e) => _fixTypeFromTypeTable(e, typeTable))
+              .toList(),
+        );
+      }
+
+      return ComplexType(
+        type.data,
+        type.extraTypes
+            ?.map((e) => _fixTypeFromTypeTable(e, typeTable))
+            .toList(),
+      );
+    }
+
+    return type is TypeReference
+        ? typeTable[type.name] ??
+            visitType(
+              TypeIdentifierNode(
+                identifier: type.name,
+                context: null,
+              ),
+            )
+        : type;
+  }
+
+  Value callFunction(
+    FunctionDefinition storage,
+    List<Value> arguments,
+    List<Type> typeArguments,
+  ) {
     final Value? customInvoke = storage.invoke(arguments);
 
     if (customInvoke != null) return customInvoke;
 
     if (storage.data.data == null) return const None();
 
-    signatureCheck(
-      storage.arguments.values.toList(),
-      arguments,
+    final Map<String, Type> fixedTypeParameters = Map.fromEntries(
+      storage.typeParameters.entries.mapIndexed(
+        (index, e) => MapEntry(
+          e.key,
+          typeArguments.get(index) ?? e.value,
+        ),
+      ),
     );
+
+    typeSignatureCheck(fixedTypeParameters.values.toList(), typeArguments);
+
+    final Map<String, Type> fixedParameters = storage.parameters.map(
+      (key, value) => MapEntry(
+        key,
+        _fixTypeFromTypeTable(value, fixedTypeParameters),
+      ),
+    );
+    signatureCheck(fixedParameters.values.toList(), arguments);
 
     final Value? result = _evaluateStatements(
       storage.data,
-      initialData: Map.fromIterables(
-        storage.arguments.keys,
-        arguments.mapIndexed(
-          (index, e) => VariableDefinition(
-            e,
-            explicitType: storage.arguments.values.toList()[index],
+      returnType: _fixTypeFromTypeTable(
+        storage.storedType.returnType,
+        fixedTypeParameters,
+      ),
+      initialData: {
+        ...Map.fromIterables(
+          fixedParameters.keys,
+          arguments.mapIndexed((index, e) {
+            return VariableDefinition(
+              e,
+              explicitType: storage.parameters.values.toList()[index],
+            );
+          }),
+        ),
+        ...Map.fromEntries(
+          fixedTypeParameters.entries.mapIndexed(
+            (index, e) => MapEntry(
+              e.key,
+              VariableDefinition(
+                e.value,
+                explicitType: const Type(TypeKind.type),
+              ),
+            ),
           ),
         ),
-      ),
+      },
       secondaryScope: storage.parentScope,
     );
 
@@ -405,6 +496,7 @@ class SapphireInterpreter extends SimpleVisitor {
 
   Value? _evaluateStatements(
     Statements statements, {
+    Type returnType = const Type(TypeKind.any),
     ScopeNative? initialData,
     Scope? secondaryScope,
   }) {
@@ -423,6 +515,12 @@ class SapphireInterpreter extends SimpleVisitor {
 
     _scope = _scope.parentScope!;
 
+    if (returnValue != null && !strongTypeCheck(returnType, returnValue)) {
+      throw Exception(
+        "Invalid return value of type ${returnValue.type}, expected $returnType",
+      );
+    }
+
     return returnValue;
   }
 
@@ -438,7 +536,7 @@ class SapphireInterpreter extends SimpleVisitor {
     final List<Value> values =
         node.values.map((e) => visitExpression(e)).toList();
 
-    return ListVal(values, [getListType(values)]);
+    return ListVal(values, [evaluateListType(values)]);
   }
 
   @override
@@ -450,17 +548,46 @@ class SapphireInterpreter extends SimpleVisitor {
 
     return Dict(
       Map.fromIterables(keys, values),
-      [getListType(keys), getListType(values)],
+      [evaluateListType(keys), evaluateListType(values)],
     );
   }
 
   @override
-  Type visitType(TypeNode node) {
+  Type visitType(TypeNode node, {bool returnReferenceWithGeneric = false}) {
+    if (node is TypeIdentifierNode) {
+      final Storage? storage = _scope.get(node.identifier);
+
+      if (storage == null) {
+        if (returnReferenceWithGeneric) {
+          return TypeReference(node.identifier);
+        }
+
+        throw Exception("Type ${node.identifier} not found");
+      }
+
+      if (storage is! VariableDefinition &&
+          !strongTypeCheck(const Type(TypeKind.type), storage.data)) {
+        throw Exception("Referenced storage ${node.identifier} is not a type");
+      }
+
+      return storage.data as Type;
+    }
+
     if (node is ComplexTypeNode) {
       if (node is FunctionTypeNode) {
         return FunctionType(
-          visitType(node.returnType),
-          node.types?.types.map((e) => visitType(e)).toList(),
+          visitType(
+            node.returnType,
+            returnReferenceWithGeneric: returnReferenceWithGeneric,
+          ),
+          node.types?.types
+              .map(
+                (e) => visitType(
+                  e,
+                  returnReferenceWithGeneric: returnReferenceWithGeneric,
+                ),
+              )
+              .toList(),
         );
       }
 
@@ -485,7 +612,14 @@ class SapphireInterpreter extends SimpleVisitor {
 
       return ComplexType(
         node.kind,
-        node.types?.types.map((e) => visitType(e)).toList(),
+        node.types?.types
+            .map(
+              (e) => visitType(
+                e,
+                returnReferenceWithGeneric: returnReferenceWithGeneric,
+              ),
+            )
+            .toList(),
       );
     }
 

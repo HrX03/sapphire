@@ -107,25 +107,39 @@ class SapphireASTVisitor extends SapphireParserBaseVisitor<Node?> {
 
   @override
   DefineStatementNode? visitDefineStatement(DefineStatementContext ctx) {
-    final TypeNode? type = ctx.type() != null ? visitType(ctx.type()!) : null;
+    final TypeDefinitionContext? typeDef = ctx.typeDefinition();
+    final TypeNode? type = typeDef != null && typeDef.type() != null
+        ? visitType(typeDef.type()!)
+        : null;
 
     final ExpressionNode? value = ctx.assignment()?.expression() != null
         ? visitExpression(ctx.assignment()!.expression()!)
         : null;
 
-    final List<ArgumentContext>? argumentContexts =
-        ctx.functionArguments()?.argumentList()?.arguments();
+    final List<ArgumentContext>? argumentContexts = ctx
+        .functionDefinition()
+        ?.functionArguments()
+        ?.argumentList()
+        ?.arguments();
     final List<ArgumentNode?>? arguments =
         argumentContexts?.map((e) => visitArgument(e)).toList();
 
     arguments?.removeWhere((e) => e == null);
 
+    final List<TypeArgumentContext>? typeArgumentContexts =
+        ctx.functionDefinition()?.typeArguments()?.typeArguments();
+    final List<TypeArgumentNode?>? typeArguments =
+        typeArgumentContexts?.map((e) => visitTypeArgument(e)).toList();
+
+    typeArguments?.removeWhere((e) => e == null);
+
     return DefineStatementNode(
       identifier: ctx.simpleIdentifier()!.text,
       type: type ?? TypeNode.any(context: ctx),
       assignedValue: value ?? NoneNode(context: ctx),
-      arguments: arguments?.cast<ArgumentNode>() ??
-          (ctx.functionArguments() != null ? [] : null),
+      parameters: arguments?.cast<ArgumentNode>() ??
+          (ctx.functionDefinition()?.functionArguments() != null ? [] : null),
+      typeParameters: typeArguments?.cast<TypeArgumentNode>(),
       exported: ctx.ExportKeyword() != null,
       context: ctx,
     );
@@ -143,6 +157,19 @@ class SapphireASTVisitor extends SapphireParserBaseVisitor<Node?> {
       type: type ?? TypeNode.any(context: ctx),
       context: ctx,
     );
+  }
+
+  @override
+  TypeArgumentNode? visitTypeArgument(TypeArgumentContext ctx) {
+    final TypeDefinitionContext? typeDef = ctx.typeDefinition();
+    final TypeNode? type = typeDef != null && typeDef.type() != null
+        ? visitType(typeDef.type()!)
+        : null;
+    final String? id = ctx.typeIdentifier()?.text;
+
+    if (id == null) return null;
+
+    return TypeArgumentNode(id: id, baseType: type, context: ctx);
   }
 
   @override
@@ -291,6 +318,10 @@ class SapphireASTVisitor extends SapphireParserBaseVisitor<Node?> {
   TypeNode? visitType(TypeContext ctx) {
     if (ctx.complexType() != null) {
       return visitComplexType(ctx.complexType()!);
+    }
+
+    if (ctx.typeIdentifier() != null) {
+      return TypeIdentifierNode(identifier: ctx.text, context: ctx);
     }
 
     final TypeNode type;
@@ -504,11 +535,21 @@ class SapphireASTVisitor extends SapphireParserBaseVisitor<Node?> {
 
     expressions?.removeWhere((e) => e == null);
 
+    final List<TypeNode?>? types = ctx
+        .functionCall()
+        ?.typeList()
+        ?.types()
+        .map((e) => visitType(e))
+        .toList();
+
+    types?.removeWhere((e) => e == null);
+
     if (parts.length == 1) {
       return IdentifierNode(
         identifier: parts.single,
         arguments: expressions?.cast<ExpressionNode>() ??
             (ctx.functionCall() != null ? [] : null),
+        typeArguments: types?.cast<TypeNode>(),
         context: ctx,
       );
     } else {
@@ -516,6 +557,7 @@ class SapphireASTVisitor extends SapphireParserBaseVisitor<Node?> {
         libraryId: parts.first,
         identifier: parts.last,
         arguments: expressions?.cast<ExpressionNode>(),
+        typeArguments: types?.cast<TypeNode>(),
         context: ctx,
       );
     }

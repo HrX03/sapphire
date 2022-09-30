@@ -23,6 +23,7 @@ abstract class Visitor<T> {
   T? visitWhileStatement(WhileStatementNode node);
 
   T? visitArgument(ArgumentNode node);
+  T? visitTypeArgument(TypeArgumentNode node);
 
   T? visitExpression(ExpressionNode node);
   T? visitIdentifier(IdentifierNode node);
@@ -39,6 +40,7 @@ abstract class Visitor<T> {
   T? visitNone(NoneNode node);
 
   T? visitType(TypeNode node);
+  T? visitGenericType(TypeIdentifierNode node);
   T? visitComplexType(ComplexTypeNode node);
   T? visitFunctionType(FunctionTypeNode node);
   T? visitTypeList(TypeListNode node);
@@ -79,6 +81,9 @@ class SimpleVisitor<T> extends Visitor<T> {
 
   @override
   T? visitArgument(ArgumentNode node) => null;
+
+  @override
+  T? visitTypeArgument(TypeArgumentNode node) => null;
 
   @override
   T? visitExpression(ExpressionNode node) => null;
@@ -123,6 +128,9 @@ class SimpleVisitor<T> extends Visitor<T> {
   T? visitType(TypeNode node) => null;
 
   @override
+  T? visitGenericType(TypeIdentifierNode node) => null;
+
+  @override
   T? visitComplexType(ComplexTypeNode node) => null;
 
   @override
@@ -154,7 +162,7 @@ class RecursiveVisitor<T> extends SimpleVisitor<T> {
   @override
   T? visitDefineStatement(DefineStatementNode node) {
     node.type.accept(this);
-    _visitList(node.arguments);
+    _visitList(node.parameters);
     node.assignedValue.accept(this);
 
     return null;
@@ -198,6 +206,21 @@ class RecursiveVisitor<T> extends SimpleVisitor<T> {
     node.type.accept(this);
 
     return null;
+  }
+
+  @override
+  T? visitTypeArgument(TypeArgumentNode node) {
+    node.baseType?.accept(this);
+
+    return null;
+  }
+
+  @override
+  T? visitIdentifier(IdentifierNode node) {
+    _visitList(node.arguments);
+    _visitList(node.typeArguments);
+
+    return super.visitIdentifier(node);
   }
 
   @override

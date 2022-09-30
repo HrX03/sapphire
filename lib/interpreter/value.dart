@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_positional_boolean_parameters
 
+import 'package:collection/collection.dart';
 import 'package:sapphire/ast/ast.dart';
 import 'package:sapphire/interpreter/storage.dart';
 
@@ -13,12 +14,12 @@ abstract class Value<T> {
   Type get type;
 
   @override
-  int get hashCode => data.hashCode;
+  int get hashCode => Object.hash(data, type);
 
   @override
   bool operator ==(Object? other) {
     if (other is Value) {
-      return data == other.data;
+      return data == other.data && type == other.type;
     }
 
     return false;
@@ -115,22 +116,24 @@ class None extends Value<void> {
 
 class FunctionRef extends Value<Statements> {
   final Type returnType;
-  final Map<String, Type> arguments;
+  final Map<String, Type> parameters;
+  final Map<String, Type> typeParameters;
   final Scope parentScope;
 
   const FunctionRef(
     super.data, {
     this.returnType = const Type(TypeKind.any),
-    this.arguments = const {},
+    this.parameters = const {},
+    this.typeParameters = const {},
     required this.parentScope,
   });
 
   @override
-  FunctionType get type => FunctionType(returnType, arguments.values.toList());
+  FunctionType get type => FunctionType(returnType, parameters.values.toList());
 
   @override
   String toString() {
-    return 'fun(${arguments.entries.map((e) => "${e.key}: ${e.value}").join(", ")}): $returnType';
+    return 'fun(${parameters.entries.map((e) => "${e.key}: ${e.value}").join(", ")}): $returnType';
   }
 }
 
@@ -182,6 +185,27 @@ class Type extends Value<TypeKind> {
   String toString() {
     return data.printableName;
   }
+
+  @override
+  int get hashCode => data.hashCode;
+
+  @override
+  bool operator ==(Object? other) {
+    if (other is Type) {
+      return data == other.data;
+    }
+
+    return false;
+  }
+}
+
+class TypeReference extends Type {
+  final String name;
+
+  const TypeReference(this.name) : super(TypeKind.type);
+
+  @override
+  String toString() => name;
 }
 
 class ComplexType extends Type {
@@ -211,6 +235,20 @@ class ComplexType extends Type {
     }
 
     return result.toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(data, type, extraTypes);
+
+  @override
+  bool operator ==(Object? other) {
+    if (other is ComplexType) {
+      return data == other.data &&
+          type == other.type &&
+          const ListEquality().equals(extraTypes, other.extraTypes);
+    }
+
+    return false;
   }
 }
 
@@ -246,6 +284,21 @@ class FunctionType extends ComplexType {
     }
 
     return result.toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(data, type, returnType, extraTypes);
+
+  @override
+  bool operator ==(Object? other) {
+    if (other is FunctionType) {
+      return data == other.data &&
+          type == other.type &&
+          returnType == other.returnType &&
+          const ListEquality().equals(extraTypes, other.extraTypes);
+    }
+
+    return false;
   }
 }
 
